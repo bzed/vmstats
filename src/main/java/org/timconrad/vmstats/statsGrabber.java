@@ -36,6 +36,7 @@ import com.vmware.vim25.PerfQuerySpec;
 import com.vmware.vim25.RuntimeFault;
 import com.vmware.vim25.mo.ManagedEntity;
 import com.vmware.vim25.mo.PerformanceManager;
+import com.vmware.vim25.InvalidArgument;
 // this is the consumer in the arrangement
 // this goes and gets the stats for a particular VM
 
@@ -130,6 +131,8 @@ class statsGrabber implements Runnable {
             // replace all the . with _
             meNameTag = meNameTag.replace(".", "_");
 
+                        PerfEntityMetricBase[] pValues = null;
+                        try {
 			pps = this.perfMgr.queryPerfProviderSummary(managedEntity);
 			// for VM's, this is likely always 20 seconds in this context.
 			int refreshRate = pps.getRefreshRate().intValue();
@@ -138,7 +141,11 @@ class statsGrabber implements Runnable {
 			PerfQuerySpec qSpec = createPerfQuerySpec(managedEntity, pmis, perfEntries, refreshRate);
 			// pValues always returns perfEntries results. this code hasn't been tested grabbing more than 1
 			// stat at a time.
-			PerfEntityMetricBase[] pValues = perfMgr.queryPerf(new PerfQuerySpec[] {qSpec});
+			pValues = perfMgr.queryPerf(new PerfQuerySpec[] {qSpec});
+                        } catch (com.vmware.vim25.InvalidArgument e) {
+                            logger.debug(meNameTag + " FAIL....");
+                            throw e;
+                        }
 			
 			if(pValues != null) {
                 for (PerfEntityMetricBase pValue : pValues) {
