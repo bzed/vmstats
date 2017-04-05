@@ -20,6 +20,7 @@ import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.concurrent.BlockingQueue;
+import java.text.Normalizer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -72,9 +73,17 @@ class statsGrabber implements Runnable {
 		PerfProviderSummary pps;
 		try {
 			String meName = managedEntity.getName();
-            // TODO: get rid of other stuff here that won't translate well into graphite
-            // TODO: This won't handle every bizarre thing that people want to do with VM naming.
+            // get rid of other stuff here that won't translate well into graphite
+            // TODO: This probable won't handle every bizarre thing that people
+            // want to do with VM naming.
+            // TODO: find a better way to handle it - basically we translate
+            // everything into there ascii equivalent - and if there is none
+            // we replace it by _
             // get rid of spaces, since we never want them.
+            meName = Normalizer.normalize(meName, Normalizer.Form.NFD);
+            meName = meName.replaceAll("[^\\x00-\\x7F]", "_");
+            // also remove [](){}
+            meName = meName.replaceAll("[()\\[\\]]", "_");
             meName = meName.replace(" ", "_");
             String meNameTag = "";
             String[] meNameParts = meName.split("[.]");
